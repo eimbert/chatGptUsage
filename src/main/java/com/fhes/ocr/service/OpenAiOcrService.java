@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fhes.ocr.dto.AiOcrResult;
 import com.fhes.ocr.dto.ExtractedFields;
-import com.fhes.ocr.dto.ImageQuality;
 import com.fhes.ocr.dto.OcrRequest;
 import com.fhes.ocr.dto.OcrResponse;
 import com.fhes.ocr.dto.OcrStatus;
@@ -16,9 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -54,34 +50,16 @@ public class OpenAiOcrService {
             throw new IllegalStateException("Missing OpenAI API key. Configure OPENAI_API_KEY.");
         }
 
-        byte[] imageBytes = ImageBase64.decode(request.imageBase64());
-        BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
-        if (image == null) {
-            throw new IllegalArgumentException("Decoded content is not a supported image");
-        }
+        ImageBase64.decode(request.imageBase64());
 
         String imageUrl = normalizeImageDataUrl(request.imageBase64(), request.fileName());
         AiOcrResult aiResult = callOpenAi(imageUrl);
         ExtractedFields fields = mergeFields(aiResult, gs1ExtractionService.extract(aiResult.rawText()));
         OcrStatus status = chooseStatus(aiResult, fields);
-        List<String> warnings = aiResult.warnings() == null ? List.of() : aiResult.warnings();
-
-        ImageQuality quality = new ImageQuality(
-                status,
-                image.getWidth(),
-                image.getHeight(),
-                0,
-                0,
-                0,
-                0,
-                0,
-                warnings
-        );
 
         return new OcrResponse(
                 status,
                 aiResult.message(),
-                quality,
                 aiResult.rawText(),
                 fields
         );
@@ -134,15 +112,14 @@ public class OpenAiOcrService {
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
         schema.put("additionalProperties", false);
-        schema.put("required", List.of("status", "message", "rawText", "ean", "lot", "expiryDate", "warnings"));
+        schema.put("required", List.of("status", "message", "rawText", "ean", "lot", "expiryDate"));
         schema.put("properties", Map.of(
                 "status", Map.of("type", "string", "enum", List.of("OK", "DUBTOSA", "MALAMENT")),
                 "message", Map.of("type", "string"),
                 "rawText", Map.of("type", "string"),
                 "ean", nullableString(),
                 "lot", nullableString(),
-                "expiryDate", nullableString(),
-                "warnings", Map.of("type", "array", "items", Map.of("type", "string"))
+                "expiryDate", nullableString()
         ));
 
         return Map.of(

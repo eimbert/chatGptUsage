@@ -12,7 +12,7 @@ Servicio OCR Java 17 con Spring Boot, empaquetado como `WAR` para desplegar en T
   - Caducidad con AI `(17)`.
   - Lote con AI `(10)`.
 - Aplica una validacion final con patrones GS1 en Java.
-- Devuelve estado `OK`, `DUBTOSA` o `MALAMENT`.
+- Devuelve estado `OK`, `DUBTOSA` o `MALAMENT`, texto detectado y campos GS1.
 
 ## Requisitos
 
@@ -130,17 +130,6 @@ Respuesta ejemplo:
 {
   "status": "OK",
   "message": "Imagen aceptable y patrones reconocidos.",
-  "quality": {
-    "status": "OK",
-    "width": 1600,
-    "height": 900,
-    "sharpness": 0,
-    "brightness": 0,
-    "contrast": 0,
-    "darkPixelRatio": 0,
-    "brightPixelRatio": 0,
-    "warnings": []
-  },
   "text": "(01)08437012345678(17)260731(10)FHES1234",
   "fields": {
     "ean": "08437012345678",
@@ -154,5 +143,3 @@ Respuesta ejemplo:
   }
 }
 ```
-
-Los campos numericos de `quality` quedan a `0` porque ya no se calcula calidad con OpenCV. La calidad queda reflejada en `status` y `warnings`, decididos por IA.
